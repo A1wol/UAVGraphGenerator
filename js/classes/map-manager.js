@@ -105,37 +105,30 @@ export default class MapManager {
     updateCoordinatesTable(this.markers);
   }
 
-  // Method to update marker position
-  updateMarkerPosition(id, lat, lng) {
-    const baseMarker = this.markers[0];
-    const distanceFromBase = this.haversine(
-      baseMarker.lat,
-      baseMarker.lng,
-      lat,
-      lng
-    );
-
-    if (distanceFromBase > this.maxRange) {
-      alert(
-        "Odległość od punktu bazowego przekracza maksymalny zasięg drona (7.5 km w jedną stronę)."
-      );
-      const marker = this.markers.find((marker) => marker.id === id).marker;
-      marker.setLatLng(this.dragStartPosition); // Revert the marker to its initial position
-    } else {
-      console.log("ID markera:", id);
-      const marker = this.markers.find((marker) => marker.id === id);
-      if (marker) {
-        marker.lat = lat;
-        marker.lng = lng;
+    // Method to update marker position after dragging
+    updateMarkerPosition(id, lat, lng) {
+      const baseMarker = this.markers[0];
+      const distanceFromBase = this.haversine(baseMarker.lat, baseMarker.lng, lat, lng);
+  
+      if (distanceFromBase > this.maxRange) {
+        alert("Odległość od punktu bazowego przekracza maksymalny zasięg drona (7.5 km w jedną stronę).");
+        const marker = this.markers.find((marker) => marker.id === id).marker;
+        marker.setLatLng(this.dragStartPosition);
       } else {
-        console.error(`Marker o ID ${id} nie istnieje.`);
+        const marker = this.markers.find((marker) => marker.id === id);
+        if (marker) {
+          marker.lat = lat;
+          marker.lng = lng;
+          marker.marker.setLatLng([lat, lng]); // Ensure the marker position is updated on the map
+        } else {
+          console.error(`Marker o ID ${id} nie istnieje.`);
+        }
       }
+  
+      updateCoordinatesTable(this.markers);
+      this.updateConnections(); // Update connections after marker position change
+      this.generateAdjacencyGraph();
     }
-
-    updateCoordinatesTable(this.markers);
-    this.updateConnections();
-    this.generateAdjacencyGraph();
-  }
 
   handleMarkerClick(marker) {
     marker.options.icon.options.html = `<div style="background-color: ${
@@ -301,6 +294,7 @@ generateAdjacencyGraph() {
 
   //Metoda do rysowania linii łączących punkty na mapie
   drawConnections(nodes) {
+    this.clearConnections();
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const latlngs = [
