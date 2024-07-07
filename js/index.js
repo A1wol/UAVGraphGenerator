@@ -33,7 +33,7 @@ export function updateCoordinatesTable(markers) {
 }
 
 document.getElementById("generateBtn").addEventListener("click", function () {
-  mapManager.generateGraph();
+  mapManager.generateAdjacencyGraph();
 });
 
 document.getElementById("clearBtn").addEventListener("click", function () {

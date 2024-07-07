@@ -12,53 +12,71 @@
     />
     <link rel="stylesheet" href="styles/styles.css" />
     <link rel="shortcut icon" href="#" />
-    ></script>
   </head>
 
   <body>
     <h1>UAV Graph Generator</h1>
-    <div id="map" class="map"></div>
 
-    <div class="divButton">
-      <button class="buttonStyle" id="generateBtn">Generate Graph</button>
-      <button class="buttonStyle" id="clearBtn">Clear Point</button>
-      <button class="buttonStyle" id="clearLineBtn">Clear Line</button>
-      <button class="buttonStyle" id="saveBtn">Save Graph</button>
-      <button class="buttonStyle" id="checkButton">Check</button>
+    <div class="graph-container">
+      <div class="left-content">
+        <div id="map" class="map"></div>
 
-      <button
-        class="buttonStyle"
-        id="loadGraph"
-        onclick="document.getElementById('fileInput').click()"
-      >
-        Load Graph
-      </button>
-      <input type="file" id="fileInput" accept=".csv" style="display: none" />
-    </div>
+        <div class="divButton">
+          <button class="buttonStyle" id="generateBtn">Generate Graph</button>
+          <button class="buttonStyle" id="clearBtn">Clear Point</button>
+          <button class="buttonStyle" id="clearLineBtn">Clear Line</button>
+          <button class="buttonStyle" id="saveBtn">Save Graph</button>
+          <button class="buttonStyle" id="checkButton">Check</button>
 
-    <div id="data">
-      <h2>Selected Coordinates</h2>
-      <table id="coordinatesTable" class="table_componentSC">
-        <caption>
-          Latitude and Longitude values are given decimal degrees
-        </caption>
-        <thead>
-          <tr>
-            <th>Point Name</th>
-            <th>Latitude [&deg]</th>
-            <th>Longitude [&deg]</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Selected coordinates will be added here -->
-        </tbody>
-      </table>
-      <h2>Adjacency Matrix</h2>
-      <p style="font-size: small">Distances are in kilometers [km]</p>
-      <table id="adjacencyMatrixTable" class="table_component">
-        <!-- Adjacency matrix will be added here -->
-      </table>
+          <button
+            class="buttonStyle"
+            id="loadGraph"
+            onclick="document.getElementById('fileInput').click()"
+          >
+            Load Graph
+          </button>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".csv"
+            style="display: none"
+          />
+        </div>
+
+        <div>
+          <h2>Selected Coordinates</h2>
+          <table id="coordinatesTable" class="table_componentSC">
+            <caption>
+              Latitude and Longitude values are given decimal degrees
+            </caption>
+            <thead>
+              <tr>
+                <th>Point Name</th>
+                <th>Latitude [&deg]</th>
+                <th>Longitude [&deg]</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Selected coordinates will be added here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="right-content" id="data">
+        <h2>Adjacency Matrix</h2>
+        <p style="font-size: small">Distances are in kilometers [km]</p>
+        <table id="adjacencyMatrixTable" class="table_component">
+          <!-- Adjacency matrix will be added here -->
+        </table>
+
+        <h2>Actions matrix</h2>
+        <p style="font-size: small">Dynamically change the graph state</p>
+        <table id="actionsMatrixTable" class="table_component">
+          <!-- Actions matrix will be added here -->
+        </table>
+      </div>
     </div>
 
     <script type="module" src="js/index.js"></script>
