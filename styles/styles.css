@@ -1,6 +1,11 @@
 .map {
     height: 400px;
     width: 100%;
+
+    border-radius: 12px;
+    -webkit-box-shadow: 8px 8px 24px -18px rgba(66, 68, 90, 1);
+    -moz-box-shadow: 8px 8px 24px -18px rgba(66, 68, 90, 1);
+    box-shadow: 8px 8px 24px -18px rgba(66, 68, 90, 1);
 }
 
 .data {
@@ -16,25 +21,36 @@ h1 {
 }
 
 .buttonStyle {
-    background-color: #04AA6D;
+    background-color: #04aa6d;
     border: none;
     border-radius: 10px;
     color: white;
-    padding: 15px 32px;
+    padding: 12px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     font-size: 14px;
-    /* border: 2px solid #04AA6D; */
+    max-height: 40px;
     font-weight: bold;
+    transition: 300ms all;
+}
+
+.buttonStyle:hover {
+    background-color: #26795a;
+    cursor: pointer;
 }
 
 .divButton {
     width: 100%;
+    max-width: 90%;
     padding: 2%;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex-grow: 1;
 }
-
 
 .marker-pin {
     width: 30px;
@@ -49,7 +65,7 @@ h1 {
 }
 
 .marker-pin:after {
-    content: '';
+    content: "";
     width: 10px;
     height: 10px;
     margin: 8px 0 0 8px;
@@ -79,7 +95,7 @@ h1 {
 
 .table_componentSC th {
     border: 1px solid #dededf;
-    background-color: #04AA6D;
+    background-color: #04aa6d;
     color: #000000;
     padding: 5px;
 }
@@ -91,7 +107,6 @@ h1 {
     padding: 5px;
     text-align: center;
 }
-
 
 /* definicja stylu dla tabeli adjacency matrix */
 .table_component {
@@ -114,7 +129,7 @@ h1 {
 
 .table_component th {
     border: 1px solid #dededf;
-    background-color: #04AA6D;
+    background-color: #04aa6d;
     color: #000000;
     padding: 5px;
     text-align: center;
@@ -130,7 +145,7 @@ h1 {
 
 /* Dodajemy styl tylko dla pierwszej komórki w każdym wierszu */
 .table_component td:first-child {
-    background-color: #04AA6D;
+    background-color: #04aa6d;
     /* Kolor taki sam jak nagłówek */
     color: #000000;
     padding: 5px;
@@ -138,7 +153,7 @@ h1 {
     text-align: center;
 }
 
-/*syle znaczników na mapie */
+/*style znaczników na mapie */
 .marker-label {
     display: inline-block;
     background-color: rgba(255, 255, 255, 0.8);
@@ -146,4 +161,32 @@ h1 {
     border-radius: 5px;
     font-size: 12px;
     font-weight: bold;
+}
+
+.graph-container {
+    display: flex;
+    gap: 12px;
+    flex-grow: 1;
+    padding: 0 12px;
+    justify-content: center;
+}
+
+.graph-container .left-content {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.graph-container .right-content {
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@media screen and (max-width: 1024px) {
+    .graph-container {
+        display: flex;
+        flex-direction: column;
+    }
 }
