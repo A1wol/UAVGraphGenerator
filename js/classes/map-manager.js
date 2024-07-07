@@ -105,6 +105,7 @@ export default class MapManager {
     updateCoordinatesTable(this.markers);
   }
 
+  // Method to update marker position
   updateMarkerPosition(id, lat, lng) {
     const baseMarker = this.markers[0];
     const distanceFromBase = this.haversine(
@@ -119,7 +120,7 @@ export default class MapManager {
         "Odległość od punktu bazowego przekracza maksymalny zasięg drona (7.5 km w jedną stronę)."
       );
       const marker = this.markers.find((marker) => marker.id === id).marker;
-      marker.setLatLng(this.dragStartPosition); // Cofnięcie markera do początkowej pozycji
+      marker.setLatLng(this.dragStartPosition); // Revert the marker to its initial position
     } else {
       console.log("ID markera:", id);
       const marker = this.markers.find((marker) => marker.id === id);
@@ -180,41 +181,40 @@ export default class MapManager {
   }
 
   //Metoda do generowania grafu i obliczania odległości
-
-  generateAdjacencyGraph() {
-    if (this.markers.length < 2) {
-      console.error(
-        "Minimum two points (base UAV and at least one airport) must be selected."
-      );
-      return;
-    }
-
-    const adjacency_matrix = [];
-    const actions_matrix = [];
-
-    for (let i = 0; i < this.markers.length; i++) {
-      const row = [];
-      for (let j = 0; j < this.markers.length; j++) {
-        row.push(
-          this.haversine(
-            this.markers[i].lat,
-            this.markers[i].lng,
-            this.markers[j].lat,
-            this.markers[j].lng
-          )
-        );
-      }
-      adjacency_matrix.push(row);
-      actions_matrix.push(row);
-    }
-    this.drawConnections(this.markers);
-
-    this.updateAdjacencyMatrixTable(adjacency_matrix, this.markers);
-    console.log("Adjacency Matrix:", adjacency_matrix);
-
-    this.updateActionsMatrixTable(actions_matrix, this.markers);
+// Method to generate adjacency matrix
+generateAdjacencyGraph() {
+  const adjacency_matrix = [];
+  if (this.markers.length < 2) {
+    console.error(
+      "Minimum two points (base UAV and at least one airport) must be selected."
+    );
+    return;
   }
 
+  const actions_matrix = [];
+
+  for (let i = 0; i < this.markers.length; i++) {
+    const row = [];
+    for (let j = 0; j < this.markers.length; j++) {
+      row.push(
+        this.haversine(
+          this.markers[i].lat,
+          this.markers[i].lng,
+          this.markers[j].lat,
+          this.markers[j].lng
+        )
+      );
+    }
+    adjacency_matrix.push(row);
+    actions_matrix.push(row);
+  }
+
+  this.updateAdjacencyMatrixTable(adjacency_matrix, this.markers);
+  console.log("Adjacency Matrix:", adjacency_matrix);
+
+  this.updateActionsMatrixTable(actions_matrix, this.markers);
+  this.drawConnections(this.markers);
+}
   // Metoda do obliczania odległości między dwoma punktami na sferze ziemskiej za pomocą formuły haversine
   haversine(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -288,15 +288,19 @@ export default class MapManager {
     this.markers[0].marker.setIcon(blueIcon);
   }
 
-  // Metoda do aktualizowania linii łączących punkty na mapie
+  // Method to update connections and adjacency matrix table
   updateConnections() {
+    // Clear existing connections
     this.connections.forEach((connection) => this.map.removeLayer(connection));
-    this.connections.length = 0;
+    this.connections = [];
+
+    // Re-draw connections with updated marker positions
     this.drawConnections(this.markers);
+    this.generateAdjacencyGraph();
   }
 
   //Metoda do rysowania linii łączących punkty na mapie
-  drawConnections(nodes, checkbox) {
+  drawConnections(nodes) {
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const latlngs = [
@@ -304,113 +308,108 @@ export default class MapManager {
           [nodes[j].lat, nodes[j].lng],
         ];
         const polyline = L.polyline(latlngs, { color: "blue" }).addTo(this.map);
-        this.connections[checkbox] = polyline;
+        this.connections.push(polyline);
       }
     }
   }
 
-  updateAdjacencyMatrixTable(matrix, markers) {
-    const table = document.getElementById("adjacencyMatrixTable");
-    table.innerHTML = "";
-    const headerRow = document.createElement("tr");
-    const emptyHeader = document.createElement("th");
-    headerRow.appendChild(emptyHeader);
+// Method to update adjacency matrix table
+updateAdjacencyMatrixTable(matrix, markers) {
+  const table = document.getElementById("adjacencyMatrixTable");
+  table.innerHTML = "";
+  const headerRow = document.createElement("tr");
+  const emptyHeader = document.createElement("th");
+  headerRow.appendChild(emptyHeader);
 
-    for (let i = 0; i < markers.length; i++) {
-      const headerCell = document.createElement("th");
-      headerCell.innerText = markers[i].name;
-      headerRow.appendChild(headerCell);
-    }
-
-    table.appendChild(headerRow);
-
-    for (let i = 0; i < matrix.length; i++) {
-      const row = document.createElement("tr");
-      const rowHeader = document.createElement("th");
-      rowHeader.innerText = markers[i].name;
-      row.appendChild(rowHeader);
-
-      for (let j = 0; j < matrix[i].length; j++) {
-        const cell = document.createElement("td");
-        cell.innerText = matrix[i][j].toFixed(2);
-        row.appendChild(cell);
-      }
-
-      table.appendChild(row);
-    }
+  for (let i = 0; i < markers.length; i++) {
+    const headerCell = document.createElement("th");
+    headerCell.innerText = markers[i].name;
+    headerRow.appendChild(headerCell);
   }
 
-  updateActionsMatrixTable(matrix, markers) {
-    const table = document.getElementById("actionsMatrixTable");
-    table.innerHTML = "";
-    const headerRow = document.createElement("tr");
-    const emptyHeader = document.createElement("th");
-    headerRow.appendChild(emptyHeader);
+  table.appendChild(headerRow);
 
-    for (let i = 0; i < markers.length; i++) {
-      const headerCell = document.createElement("th");
-      headerCell.innerText = markers[i].name;
-      headerRow.appendChild(headerCell);
+  for (let i = 0; i < matrix.length; i++) {
+    const row = document.createElement("tr");
+    const rowHeader = document.createElement("th");
+    rowHeader.innerText = markers[i].name;
+    row.appendChild(rowHeader);
+
+    for (let j = 0; j < matrix[i].length; j++) {
+      const cell = document.createElement("td");
+      cell.innerText = matrix[i][j].toFixed(2);
+      row.appendChild(cell);
     }
 
-    table.appendChild(headerRow);
+    table.appendChild(row);
+  }
+}
 
-    for (let i = 0; i < matrix.length; i++) {
-      const row = document.createElement("tr");
-      const rowHeader = document.createElement("th");
-      rowHeader.innerText = markers[i].name;
-      row.appendChild(rowHeader);
+// Method to update actions matrix table
+updateActionsMatrixTable(matrix, markers) {
+  const table = document.getElementById("actionsMatrixTable");
+  table.innerHTML = "";
+  const headerRow = document.createElement("tr");
+  const emptyHeader = document.createElement("th");
+  headerRow.appendChild(emptyHeader);
 
-      for (let j = 0; j < matrix[i].length; j++) {
-        const cell = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = matrix[i][j].toFixed(2);
+  for (let i = 0; i < markers.length; i++) {
+    const headerCell = document.createElement("th");
+    headerCell.innerText = markers[i].name;
+    headerRow.appendChild(headerCell);
+  }
 
-        if (checkbox.value === "0.00") {
-          checkbox.disabled = true;
+  table.appendChild(headerRow);
+
+  for (let i = 0; i < matrix.length; i++) {
+    const row = document.createElement("tr");
+    const rowHeader = document.createElement("th");
+    rowHeader.innerText = markers[i].name;
+    row.appendChild(rowHeader);
+
+    for (let j = 0; j < matrix[i].length; j++) {
+      const cell = document.createElement("td");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = matrix[i][j].toFixed(2);
+
+      if (checkbox.value === "0.00") {
+        checkbox.disabled = true;
+      } else {
+        checkbox.checked = true;
+      }
+
+      checkbox.addEventListener("click", (event) => {
+        const checkbox = event.target;
+        const latlngs = [
+          [markers[i].lat, markers[i].lng],
+          [markers[j].lat, markers[j].lng],
+        ];
+
+        if (checkbox.checked) {
+          const polyline = L.polyline(latlngs, { color: "green" }).addTo(this.map);
+          this.connections.push(polyline);
         } else {
-          checkbox.checked = true;
+          const foundConnection = this.connections.find((el) => {
+            return (
+              (el._latlngs[0].lat === latlngs[0][0] && el._latlngs[0].lng === latlngs[0][1] && el._latlngs[1].lat === latlngs[1][0] && el._latlngs[1].lng === latlngs[1][1]) ||
+              (el._latlngs[0].lat === latlngs[1][0] && el._latlngs[0].lng === latlngs[1][1] && el._latlngs[1].lat === latlngs[0][0] && el._latlngs[1].lng === latlngs[0][1])
+            );
+          });
+          if (foundConnection) {
+            this.map.removeLayer(foundConnection);
+            this.connections = this.connections.filter((el) => el !== foundConnection);
+          }
         }
+      });
 
-        checkbox.addEventListener(
-          "change",
-          function () {
-            // assume this.connections is an object that maps checkboxes to lines
-            if (checkbox.checked) {
-              // remove old line
-              if (this.connections[checkbox]) {
-                this.map.removeLayer(this.connections[checkbox]);
-              }
-
-              // update line data
-              const latlngs = [
-                [nodes[i].lat, nodes[i].lng],
-                [nodes[j].lat, nodes[j].lng],
-              ];
-
-              // add new line
-              const polyline = L.polyline(latlngs, { color: "blue" }).addTo(
-                this.map
-              );
-              this.connections[checkbox] = polyline; // store the new line
-            } else {
-              // remove old line
-              if (this.connections[checkbox]) {
-                this.map.removeLayer(this.connections[checkbox]);
-                delete this.connections[checkbox]; // remove the line from the object
-              }
-            }
-            console.log(this.connections, 'connections')
-          }.bind(this)
-        );
-
-        cell.appendChild(checkbox);
-        row.appendChild(cell);
-      }
-      table.appendChild(row);
+      cell.appendChild(checkbox);
+      row.appendChild(cell);
     }
+
+    table.appendChild(row);
   }
+}
 
   // Metoda do usunięcia wszystkich linii (połączeń) z mapy oraz wyczyszczenie tablicy przechowującej te połączenia
   clearConnections() {
