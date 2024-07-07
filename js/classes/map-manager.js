@@ -107,28 +107,51 @@ export default class MapManager {
 
     // Method to update marker position after dragging
     updateMarkerPosition(id, lat, lng) {
-      const baseMarker = this.markers[0];
-      const distanceFromBase = this.haversine(baseMarker.lat, baseMarker.lng, lat, lng);
-  
-      if (distanceFromBase > this.maxRange) {
-        alert("Odległość od punktu bazowego przekracza maksymalny zasięg drona (7.5 km w jedną stronę).");
-        const marker = this.markers.find((marker) => marker.id === id).marker;
-        marker.setLatLng(this.dragStartPosition);
-      } else {
-        const marker = this.markers.find((marker) => marker.id === id);
-        if (marker) {
+      const marker = this.markers.find((marker) => marker.id === id);
+    
+      if (!marker) {
+        console.error(`Marker with ID ${id} does not exist.`);
+        return;
+      }
+    
+      if (marker.name === this.baseName) {
+        // If the marker is the UAV base, ensure it stays within the maximum range from any other marker
+        let withinRange = true;
+        for (let i = 1; i < this.markers.length; i++) {
+          const distanceFromBase = this.haversine(lat, lng, this.markers[i].lat, this.markers[i].lng);
+          if (distanceFromBase > this.maxRange) {
+            withinRange = false;
+            break;
+          }
+        }
+    
+        if (!withinRange) {
+          alert("The UAV base cannot be moved outside the maximum range of 7.5 km from any other marker.");
+          marker.marker.setLatLng(this.dragStartPosition); // Revert to the original position
+        } else {
           marker.lat = lat;
           marker.lng = lng;
-          marker.marker.setLatLng([lat, lng]); // Ensure the marker position is updated on the map
+          marker.marker.setLatLng([lat, lng]);
+        }
+      } else {
+        // For other markers, ensure they stay within the maximum range from the UAV base
+        const baseMarker = this.markers[0];
+        const distanceFromBase = this.haversine(baseMarker.lat, baseMarker.lng, lat, lng);
+        if (distanceFromBase > this.maxRange) {
+          alert("The marker cannot be moved outside the maximum range of 7.5 km from the UAV base.");
+          marker.marker.setLatLng(this.dragStartPosition); // Revert to the original position
         } else {
-          console.error(`Marker o ID ${id} nie istnieje.`);
+          marker.lat = lat;
+          marker.lng = lng;
+          marker.marker.setLatLng([lat, lng]);
         }
       }
-  
+    
       updateCoordinatesTable(this.markers);
       this.updateConnections(); // Update connections after marker position change
       this.generateAdjacencyGraph();
     }
+    
 
   handleMarkerClick(marker) {
     marker.options.icon.options.html = `<div style="background-color: ${
