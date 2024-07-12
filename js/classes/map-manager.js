@@ -103,6 +103,7 @@ export default class MapManager {
     this.markers.push(newMarker);
 
     updateCoordinatesTable(this.markers);
+    console.log(this.markers);
   }
 
     // Method to update marker position after dragging
@@ -189,15 +190,20 @@ export default class MapManager {
     updateCoordinatesTable(this.markers);
     this.clearConnections();
     this.clearAdjacencyMatrix(); // Dodana linia czyszcząca tablicę sąsiedztwa
+    this.clearActionTable();
   }
 
   clearAdjacencyMatrix() {
     const table = document.getElementById("adjacencyMatrixTable");
     table.innerHTML = "";
   }
+  clearActionTable() {
+    const table = document.getElementById("actionsMatrixTable");
+    table.innerHTML = "";
+  }
 
   //Metoda do generowania grafu i obliczania odległości
-// Method to generate adjacency matrix
+
 generateAdjacencyGraph() {
   const adjacency_matrix = [];
   if (this.markers.length < 2) {
@@ -304,13 +310,9 @@ generateAdjacencyGraph() {
     this.markers[0].marker.setIcon(blueIcon);
   }
 
-  // Method to update connections and adjacency matrix table
   updateConnections() {
-    // Clear existing connections
     this.connections.forEach((connection) => this.map.removeLayer(connection));
     this.connections = [];
-
-    // Re-draw connections with updated marker positions
     this.drawConnections(this.markers);
     this.generateAdjacencyGraph();
   }
@@ -330,7 +332,7 @@ generateAdjacencyGraph() {
     }
   }
 
-// Method to update adjacency matrix table
+
 updateAdjacencyMatrixTable(matrix, markers) {
   const table = document.getElementById("adjacencyMatrixTable");
   table.innerHTML = "";
@@ -390,10 +392,13 @@ updateActionsMatrixTable(matrix, markers) {
       checkbox.type = "checkbox";
       checkbox.value = matrix[i][j].toFixed(2);
 
-      if (checkbox.value === "0.00") {
+      let name1 = markers[i].name;
+      let name2 = markers[j].name;
+
+      if (name1 === name2) {
         checkbox.disabled = true;
       } else {
-        checkbox.checked = true;
+        checkbox.checked = matrix[i][j] > 0; // Ustawienie checkboxa jako checked jeśli wartość w macierzy jest większa od 0
       }
 
       checkbox.addEventListener("click", (event) => {
@@ -406,6 +411,9 @@ updateActionsMatrixTable(matrix, markers) {
         if (checkbox.checked) {
           const polyline = L.polyline(latlngs, { color: "green" }).addTo(this.map);
           this.connections.push(polyline);
+          const distance = this.haversine(markers[i].lat, markers[i].lng, markers[j].lat, markers[j].lng);
+          matrix[i][j] = distance; // Aktualizowanie wartości w macierzy
+          this.updateAdjacencyMatrixTable(matrix, this.markers); // Aktualizowanie tabeli adjacencyMatrixTable
         } else {
           const foundConnection = this.connections.find((el) => {
             return (
@@ -417,6 +425,8 @@ updateActionsMatrixTable(matrix, markers) {
             this.map.removeLayer(foundConnection);
             this.connections = this.connections.filter((el) => el !== foundConnection);
           }
+          matrix[i][j] = 0; // Ustawienie wartości w macierzy na 0
+          this.updateAdjacencyMatrixTable(matrix, this.markers); // Aktualizowanie tabeli adjacencyMatrixTable
         }
       });
 
@@ -441,7 +451,7 @@ updateActionsMatrixTable(matrix, markers) {
     const actions_matrix = [];
 
     // Tworzymy dane w formacie CSV
-    let csvContent = "Point Name,Latitude,Longitude,Color\n";
+    let csvContent = "ID,Point Name,Latitude,Longitude,Color\n";
 
     nodes.forEach((node) => {
       csvContent += `${node.id},${node.name},${node.lat},${node.lng},${node.color}\n`;
@@ -538,18 +548,63 @@ updateActionsMatrixTable(matrix, markers) {
   /**
    * Metoda do dodawania markerów na mapie i aktualizacji tablicy markerów
    */
-  addMarker(id, lat, lng, name, color) {
-    const marker = L.marker([lat, lng]).addTo(this.map);
-
+  addMarker(id = null, lat, lng, name, color) {
+    if (id === null) {
+      maxId += 1;
+      id = maxId; // Generowanie nowego ID
+    } else {
+      id = parseInt(id); // Konwersja na liczbę całkowitą
+    }
+    let availableColors = [
+      "gold",
+      "red",
+      "green",
+      "orange",
+      "yellow",
+      "violet",
+      "grey",
+      "black",
+    ];
+    let randomColorIndex = Math.floor(Math.random() * availableColors.length);
+    const loaded_color = id > 0 ? availableColors[randomColorIndex] : "blue";
+    const icon = new L.Icon({
+      iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${loaded_color}.png`,
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+  
+    const marker = L.marker([lat, lng], {
+      icon: icon,
+      draggable: true
+    }).addTo(this.map);
+  
     // Dodajemy wiązanie popup z nazwą punktu
     marker.bindPopup(name).openPopup();
-
+  
+    marker.on("click", () => this.handleMarkerClick(marker));
+  
+    marker.on("dragstart", (event) => {
+      // Zapisujemy pozycję początkową markera
+      const startPosition = event.target.getLatLng();
+      this.dragStartPosition = {
+        lat: startPosition.lat,
+        lng: startPosition.lng
+      };
+  
+      console.log("Początkowa pozycja markera:", this.dragStartPosition);
+    });
+  
+    marker.on("dragend", (event) => {
+      const newLatLng = event.target.getLatLng();
+      this.updateMarkerPosition(id, newLatLng.lat, newLatLng.lng);
+    });
+  
     const newMarker = new Marker(id, name, lat, lng, marker, color);
     this.markers.push(newMarker);
-
+  
     updateCoordinatesTable(this.markers);
-  }
-  check() {
-    console.log(this.markers);
   }
 }
